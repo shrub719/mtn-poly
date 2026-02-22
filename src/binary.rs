@@ -12,7 +12,7 @@ fn adjust_ms(ms: u32) -> u32 {
 }
 
 fn get_field(metadata_line: &str) -> &str {
-    metadata_line.splitn(3, ' ').nth(2).unwrap()
+    metadata_line.splitn(3, ' ').nth(2).expect("empty metadata field")
 }
 
 fn bpm_to_mspb(bpm: f64) -> f64 {
@@ -24,14 +24,14 @@ fn to_ms(time: &str, uses_beats: bool, mspb: f64) -> u32 {
         let mut parts = time.split(':');
 
         // oops, all 4/4
-        let measure: u32 = parts.next().unwrap().parse().unwrap();
-        let beat: f64 = parts.next().unwrap().parse().unwrap();
+        let measure: u32 = parts.next().expect("no measure").parse().expect("invalid measure");
+        let beat: f64 = parts.next().expect("no beat").parse().expect("invalid beat");
         let beats_into: f64 = (measure * 4) as f64 + beat;
 
         let ms = (beats_into * mspb) as u32;
         return adjust_ms(ms);
     } else {
-        return adjust_ms(time.parse().unwrap())
+        return adjust_ms(time.parse().expect("invalid ms"))
     }
 }
 
@@ -65,7 +65,7 @@ pub fn convert_map(input: PathBuf, output: PathBuf) {
     let uses_beats = bpm_field != "ms";
     let mut mspb: f64 = 0.0;
     if uses_beats {
-        let bpm: f64 = bpm_field.parse().unwrap();
+        let bpm: f64 = bpm_field.parse().expect("invalid bpm");
         mspb = bpm_to_mspb(bpm);
     }
     
@@ -77,12 +77,12 @@ pub fn convert_map(input: PathBuf, output: PathBuf) {
         }
 
         let mut parts = line.split_whitespace();
-        let class = parts.next().unwrap();
-        let ms = to_ms(parts.next().unwrap(), uses_beats, mspb);
+        let class = parts.next().expect("no item class");
+        let ms = to_ms(parts.next().expect("no item time"), uses_beats, mspb);
         
         match class {
             "t" => {
-                let x: f32 = parts.next().unwrap().parse().unwrap();
+                let x: f32 = parts.next().expect("no note x").parse().expect("invalid note x");
 
                 bin.write_all(b"t").unwrap();
                 bin.write_all(&ms.to_le_bytes()).unwrap();
@@ -91,8 +91,8 @@ pub fn convert_map(input: PathBuf, output: PathBuf) {
 
             },
             "h" => {
-                let x: f32 = parts.next().unwrap().parse().unwrap();
-                let ms_end = to_ms(parts.next().unwrap(), uses_beats, mspb);
+                let x: f32 = parts.next().expect("no note x").parse().expect("invalid note x");
+                let ms_end = to_ms(parts.next().expect("no hold note end time"), uses_beats, mspb);
 
                 bin.write_all(b"h").unwrap();
                 bin.write_all(&ms.to_le_bytes()).unwrap();
