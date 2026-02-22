@@ -1,5 +1,4 @@
 use clap::Parser;
-use anyhow::{ Context, Result };
 
 mod binary;
 
@@ -12,7 +11,7 @@ struct Args {
     output: std::path::PathBuf
 }
 
-fn main() -> Result<()> {
+fn main() {
     let args = Args::parse();
 
     println!("input: {:?}, output: {:?}", args.input, args.output);
