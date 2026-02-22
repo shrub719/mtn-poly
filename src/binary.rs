@@ -26,7 +26,7 @@ fn to_ms(time: &str, uses_beats: bool, mspb: f64) -> u32 {
         // oops, all 4/4
         let measure: u32 = parts.next().expect("no measure").parse().expect("invalid measure");
         let beat: f64 = parts.next().expect("no beat").parse().expect("invalid beat");
-        let beats_into: f64 = (measure * 4) as f64 + beat;
+        let beats_into: f64 = (measure * 4) as f64 + beat + 1.0;
 
         let ms = (beats_into * mspb) as u32;
         return adjust_ms(ms);
@@ -99,6 +99,18 @@ pub fn convert_map(input: PathBuf, output: PathBuf) {
                 bin.write_all(&x.to_le_bytes()).unwrap();
                 bin.write_all(&ms_end.to_le_bytes()).unwrap();
             },
+            "e" => {
+                let r: u16 = parts.next().expect("no bg color r").parse().expect("invalid bg color r");
+                let g: u16 = parts.next().expect("no bg color g").parse().expect("invalid bg color g");
+                let b: u16 = parts.next().expect("no bg color b").parse().expect("invalid bg color b");
+
+                bin.write_all(b"e").unwrap();
+                bin.write_all(&ms.to_le_bytes()).unwrap();
+                bin.write_all(&r.to_le_bytes()).unwrap();
+                bin.write_all(&g.to_le_bytes()).unwrap();
+                bin.write_all(&b.to_le_bytes()).unwrap();
+                bin.write_all(b"  ").unwrap();      // padding
+            }
             _ => panic!()
         };
     }
