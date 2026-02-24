@@ -45,10 +45,10 @@ fn main() {
             compile::compile(input, output);
         },
         Pack { input, output }=> {
-
+            todo!()
         },
         Osu { input, output } => {
-
+            todo!()
         }
     }
 }
