@@ -1,18 +1,54 @@
-use clap::Parser;
+use clap::{ Parser, Subcommand };
+use std::path::PathBuf;
 
-mod binary;
+mod compile;
+mod pack;
+mod osu;
 
 #[derive(Parser)]
-#[command(version, about)]
-struct Args {
-    input: std::path::PathBuf,
+#[command(author, version, about)]
+struct Cli {
+    #[command(subcommand)]
+    command: Commands,
+}
 
-    #[arg(short, long, default_value = "./output.mtb")]
-    output: std::path::PathBuf
+#[derive(Subcommand)]
+enum Commands {
+    Compile {
+        input: PathBuf,
+
+        #[arg(short, long, default_value = "./output.mtb")]
+        output: PathBuf
+    },
+
+    Pack {
+        input: Vec<PathBuf>,
+
+        #[arg(short, long, default_value = "./output.mtp")]
+        output: PathBuf
+    },
+
+    Osu {
+        input: PathBuf,
+
+        #[arg(short, long, default_value = "./output.mtn")]
+        output: PathBuf
+    }
 }
 
 fn main() {
-    let args = Args::parse();
+    let cli = Cli::parse();
 
-    binary::convert_map(args.input, args.output);
+    use Commands::*;
+    match cli.command {
+        Compile { input, output }=> {
+            compile::compile(input, output);
+        },
+        Pack { input, output }=> {
+
+        },
+        Osu { input, output } => {
+
+        }
+    }
 }

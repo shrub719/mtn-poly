@@ -1,7 +1,15 @@
 [package]
-name = "mtn-polyrhythm"
+name = "mtn-poly"
 version = "0.1.0"
 edition = "2024"
+authors = ["shrub <shrub719@gmail.com>"]
+license = "MIT"
+description = "Multipurpose command line conversion tool for metronome."
+readme = "README.md"
+homepage = "https://github.com/shrub719/mtn-poly"
+repository = "https://github.com/shrub719/mtn-poly"
+keywords = []
+categories = []
 
 [dependencies]
 clap = { version = "4.0", features = ["derive"] }

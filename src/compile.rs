@@ -47,7 +47,7 @@ fn pad_str(s: &str) -> Vec<u8> {
     buf
 }
 
-pub fn convert_map(input: PathBuf, output: PathBuf) {
+pub fn compile(input: PathBuf, output: PathBuf) {
     let txt = fs::read_to_string(input).unwrap();
     let mut bin = fs::File::create(output).unwrap();
 
@@ -87,7 +87,7 @@ pub fn convert_map(input: PathBuf, output: PathBuf) {
                 bin.write_all(b"t").unwrap();
                 bin.write_all(&ms.to_le_bytes()).unwrap();
                 bin.write_all(&x.to_le_bytes()).unwrap();
-                bin.write_all(b"mtn ").unwrap();    // padding?
+                bin.write_all(b"    ").unwrap();    // padding?
 
             },
             "h" => {
