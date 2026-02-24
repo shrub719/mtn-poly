@@ -1,3 +1,5 @@
+current_target := `rustc -Vv | grep host | awk '{print $2}'`
+
 [default]
 dev:
     cargo build
@@ -5,9 +7,10 @@ dev:
 build:
     cargo build --release
 
-test:
-    cargo run -- ./test/test.mtn -o ./test/output.mtb
+test path:
+    cargo run -- compile {{path}} -o ./test/output.mtb
+    ./test/epsilon.bin --nwb ./test/libmetronome.so --nwb-external-data ./test/output.mtb
 
 run input output:
-    cargo run -- {{input}} -o {{output}}
+    cargo run -- compile {{input}} -o {{output}}
 
