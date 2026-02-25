@@ -35,15 +35,15 @@ pub fn osu(input: PathBuf, output: PathBuf) {
         let line = lines[i].trim();
         let mut parts = line.split(',');
         
-        let osu_x: f32 = parts.next().unwrap().parse().unwrap();
-        let _osu_y = parts.next().unwrap();
-        let ms: u32 = parts.next().unwrap().parse().unwrap();
-        let type_flags: u16 = parts.next().unwrap().parse().unwrap();
-        let _ = parts.next().unwrap();
-        let ms_end: u32 = parts.next().unwrap().split(':').nth(0).unwrap().parse().unwrap();
+        let osu_x: f32 = parts.next().expect("no note x").parse().expect("invalid note x");
+        let _osu_y = parts.next().expect("no note y");
+        let ms: u32 = parts.next().expect("no note time").parse().expect("invalid note time");
+        let type_flags: u16 = parts.next().expect("no type flags").parse().expect("invalid type flags");
+        let _ = parts.next().expect("not enough note information");
+        let ms_end: u32 = parts.next().expect("no note properties").split(':').nth(0).expect("no hold note end time").parse().expect("invalid hold note end time");
 
         let x: f32 = osu_x / 512.0;
-        assert!(x < 1.0);
+        assert!(0.0 <= x && x <= 1.0, "note x out of range");
 
         match type_flags {
             1 | 5 => write!(&mut txt, "t {} {}\n", ms, x),

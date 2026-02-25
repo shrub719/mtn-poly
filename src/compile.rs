@@ -69,6 +69,7 @@ pub fn compile(input: PathBuf, output: PathBuf) {
         mspb = bpm_to_mspb(bpm);
     }
     
+    let mut i = 4;
     for raw_line in &lines[4..] {
         let line = raw_line.trim();
 
@@ -111,8 +112,10 @@ pub fn compile(input: PathBuf, output: PathBuf) {
                 bin.write_all(&b.to_le_bytes()).unwrap();
                 bin.write_all(b"  ").unwrap();      // padding
             }
-            _ => panic!()
+            other => panic!("/!\\ line {}: unsupported note type '{}'", i, other)
         };
+
+        i += 1;
     }
 }
 
