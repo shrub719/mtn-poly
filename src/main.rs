@@ -1,5 +1,6 @@
 use clap::{ Parser, Subcommand };
 use std::path::PathBuf;
+use anyhow::Result;
 
 mod compile;
 mod pack;
@@ -21,13 +22,6 @@ enum Commands {
         output: PathBuf
     },
 
-    Pack {
-        input: Vec<PathBuf>,
-
-        #[arg(short, long, default_value = "./output.mtp")]
-        output: PathBuf
-    },
-
     Osu {
         input: PathBuf,
 
@@ -36,19 +30,18 @@ enum Commands {
     }
 }
 
-fn main() {
+fn main() -> Result<()> {
     let cli = Cli::parse();
 
     use Commands::*;
     match cli.command {
-        Compile { input, output }=> {
-            compile::compile(input, output);
-        },
-        Pack { input: _, output: _ }=> {
-            todo!()
+        Compile { input, output } => {
+            compile::compile(input, output)
         },
         Osu { input, output } => {
-            osu::osu(input, output);
+            osu::osu(input, output)
         }
-    }
+    }?;
+
+    Ok(())
 }

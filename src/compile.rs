@@ -1,6 +1,7 @@
 use std::fs;
 use std::path::PathBuf;
 use std::io::Write;
+use anyhow::{ Context, Result, anyhow };
 
 fn adjust_ms(ms: u32) -> u32 {
     // the calculator's clock is slightly behind,
@@ -81,7 +82,7 @@ fn interpolate_colour(n: u16, c0: (u16, u16, u16), c1: (u16, u16, u16)) -> Vec<(
     colours
 }
 
-pub fn compile(input: PathBuf, output: PathBuf) {
+pub fn compile(input: PathBuf, output: PathBuf) -> Result<()> {
     let txt = fs::read_to_string(input).unwrap();
     let mut bin = fs::File::create(output).unwrap();
 
@@ -176,5 +177,7 @@ pub fn compile(input: PathBuf, output: PathBuf) {
 
         i += 1;
     }
+
+    Ok(())
 }
 
