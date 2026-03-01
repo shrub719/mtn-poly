@@ -10,11 +10,11 @@ mod osu;
 #[command(author, version, about)]
 struct Cli {
     #[command(subcommand)]
-    command: Commands,
+    command: Command,
 }
 
 #[derive(Subcommand)]
-enum Commands {
+enum Command {
     Compile {
         input: PathBuf,
 
@@ -33,7 +33,7 @@ enum Commands {
 fn main() -> Result<()> {
     let cli = Cli::parse();
 
-    use Commands::*;
+    use Command::*;
     match cli.command {
         Compile { input, output } => {
             compile::compile(input, output)
