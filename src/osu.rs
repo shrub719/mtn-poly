@@ -2,8 +2,12 @@ use std::fs;
 use std::path::PathBuf;
 use std::io::Write;
 
-fn get_field(metadata_line: &str) -> &str {
-    metadata_line.split(':').nth(1).unwrap()
+fn get_field<'a>(lines: &'a Vec<&'a str>, field: &str) -> &'a str {
+    let i = match lines.iter().position(|l| l.starts_with(field)) {
+        Some(index) => index,
+        None => panic!("no {} in file", field)
+    };
+    lines[i].split(':').nth(1).expect("missing field").trim()
 }
 
 fn convert_osu_x(osu_x: f32, lanes: f32) -> f32 {
@@ -17,26 +21,18 @@ pub fn osu(input: PathBuf, output: PathBuf) {
 
     let lines: Vec<&str> = osu.lines().collect();
 
-    let mut i = match lines.iter().position(|l| l == &"[Metadata]") {
-        Some(index) => index + 1,
-        None => panic!("no Metadata section in file")
-    };
+    let lanes: f32 = get_field(&lines, "CircleSize").parse().expect("invalid CircleSize");
 
-    let lanes: f32 = match lines.iter().position(|l| l.starts_with("CircleSize")) {
-        Some(index) => lines[index].split(':').nth(1).expect("no CircleSize in file"),
-        None => panic!("no CircleSize in file")
-    }.parse().expect("invalid CircleSize");
-
-    let title = get_field(lines[i+1]);
-    let artist = get_field(lines[i+3]);
-    let id = format!("osu_{}", get_field(lines[i+8]));
+    let title = get_field(&lines, "TitleUnicode");
+    let artist = get_field(&lines, "ArtistUnicode");
+    let id = format!("osu_{}", get_field(&lines, "BeatmapID"));
 
     write!(
         &mut txt, "// title: {}\n// artist: {}\n// id: {}\n// bpm: ms\n",
         title, artist, id
     ).unwrap();
 
-    i = match lines.iter().position(|l| l == &"[HitObjects]") {
+    let mut i = match lines.iter().position(|l| l == &"[HitObjects]") {
         Some(index) => index + 1,
         None => panic!("no HitObjects section in file")
     };
