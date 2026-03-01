@@ -12,27 +12,36 @@ fn adjust_ms(ms: u32) -> u32 {
     (ms as f64 * calc_ms_per_real_ms) as u32
 }
 
-fn get_field(metadata_line: &str) -> &str {
-    metadata_line.splitn(3, ' ').nth(2).expect("empty metadata field")
+fn get_field<'a>(lines: &'a Vec<&'a str>, i: usize) -> Result<&'a str> {
+    Ok(
+        lines[i].splitn(3, ' ').nth(2)
+        .with_context(|| format!("line {}: invalid metadata", i))?
+    )
 }
 
 fn bpm_to_mspb(bpm: f64) -> f64 {
     1.0 / (bpm / 60_000.0)
 }
 
-fn to_ms(time: &str, uses_beats: bool, mspb: f64) -> u32 {
+fn to_ms(time: &str, uses_beats: bool, mspb: f64, i: usize) -> Result<u32> {
     if uses_beats {
         let mut parts = time.split(':');
 
         // oops, all 4/4
-        let measure: u32 = parts.next().expect("no measure").parse().expect("invalid measure");
-        let beat: f64 = parts.next().expect("no beat").parse().expect("invalid beat");
+        let measure: u32 = parts.next()
+            .with_context(|| format!("line {}: missing note measure", i))?.parse()
+            .with_context(|| format!("line {}: invalid note measure", i))?;
+
+        let beat: f64 = parts.next()
+            .with_context(|| format!("line {}: missing note beat", i))?.parse()
+            .with_context(|| format!("line {}: invalid note beat", i))?;
+
         let beats_into: f64 = (measure * 4) as f64 + beat - 1.0;
 
         let ms = (beats_into * mspb) as u32;
-        return adjust_ms(ms);
+        return Ok(adjust_ms(ms));
     } else {
-        return adjust_ms(time.parse().expect("invalid ms"))
+        return Ok(adjust_ms(time.parse().with_context(|| format!("line {}: invalid note time", i))?))
     }
 }
 
@@ -88,10 +97,10 @@ pub fn compile(input: PathBuf, output: PathBuf) -> Result<()> {
 
     let lines: Vec<&str> = txt.lines().collect();
 
-    let title = get_field(lines[0]);
-    let artist = get_field(lines[1]);
-    let id = get_field(lines[2]);
-    let bpm_field = get_field(lines[3]);
+    let title = get_field(&lines, 0)?;
+    let artist = get_field(&lines, 1)?;
+    let id = get_field(&lines, 2)?;
+    let bpm_field = get_field(&lines, 3)?;
 
     bin.write_all(&pad_str(title)).unwrap();
     bin.write_all(&pad_str(artist)).unwrap();
@@ -100,7 +109,7 @@ pub fn compile(input: PathBuf, output: PathBuf) -> Result<()> {
     let uses_beats = bpm_field != "ms";
     let mut mspb: f64 = 0.0;
     if uses_beats {
-        let bpm: f64 = bpm_field.parse().expect("invalid bpm");
+        let bpm: f64 = bpm_field.parse().with_context(|| "invalid bpm in file")?;
         mspb = bpm_to_mspb(bpm);
     }
     
@@ -113,12 +122,14 @@ pub fn compile(input: PathBuf, output: PathBuf) -> Result<()> {
         }
 
         let mut parts = line.split_whitespace();
-        let class = parts.next().expect("no item class");
-        let ms = to_ms(parts.next().expect("no item time"), uses_beats, mspb);
+        let class = parts.next().with_context(|| format!("line {}: missing class", i))?;
+        let ms = to_ms(parts.next().with_context(|| format!("line {}: missing time", i))?, uses_beats, mspb, i)?;
         
         match class {
             "t" => {
-                let x: f32 = parts.next().expect("no note x").parse().expect("invalid note x");
+                let x: f32 = parts.next()
+                    .with_context(|| format!("line {}: missing x coordinate", i))?.parse()
+                    .with_context(|| format!("line {}: invalid x coordinate", i))?;
 
                 bin.write_all(b"t").unwrap();
                 bin.write_all(&ms.to_le_bytes()).unwrap();
@@ -127,8 +138,11 @@ pub fn compile(input: PathBuf, output: PathBuf) -> Result<()> {
 
             },
             "h" => {
-                let x: f32 = parts.next().expect("no note x").parse().expect("invalid note x");
-                let ms_end = to_ms(parts.next().expect("no hold note end time"), uses_beats, mspb);
+                let x: f32 = parts.next()
+                    .with_context(|| format!("line {}: missing x coordinate", i))?.parse()
+                    .with_context(|| format!("line {}: invalid x coordinate", i))?;
+
+                let ms_end = to_ms(parts.next().with_context(|| format!("line {}: missing hold note end time", i))?, uses_beats, mspb, i)?;
 
                 bin.write_all(b"h").unwrap();
                 bin.write_all(&ms.to_le_bytes()).unwrap();
@@ -136,9 +150,15 @@ pub fn compile(input: PathBuf, output: PathBuf) -> Result<()> {
                 bin.write_all(&ms_end.to_le_bytes()).unwrap();
             },
             "e" => {
-                let r: u16 = parts.next().expect("no bg color r").parse().expect("invalid bg color r");
-                let g: u16 = parts.next().expect("no bg color g").parse().expect("invalid bg color g");
-                let b: u16 = parts.next().expect("no bg color b").parse().expect("invalid bg color b");
+                let r: u16 = parts.next()
+                    .with_context(|| format!("line {}: missing bg color r", i))?.parse()
+                    .with_context(|| format!("line {}: invalid bg color r", i))?;
+                let g: u16 = parts.next()
+                    .with_context(|| format!("line {}: missing bg color g", i))?.parse()
+                    .with_context(|| format!("line {}: invalid bg color g", i))?;
+                let b: u16 = parts.next()
+                    .with_context(|| format!("line {}: missing bg color b", i))?.parse()
+                    .with_context(|| format!("line {}: invalid bg color b", i))?;
 
                 bin.write_all(b"e").unwrap();
                 bin.write_all(&ms.to_le_bytes()).unwrap();
@@ -148,16 +168,31 @@ pub fn compile(input: PathBuf, output: PathBuf) -> Result<()> {
                 bin.write_all(b"  ").unwrap();      // padding
             },
             "e-fade" => {
-                let r0: u16 = parts.next().expect("no fade color r0").parse().expect("invalid fade color r0");
-                let g0: u16 = parts.next().expect("no fade color g0").parse().expect("invalid fade color g0");
-                let b0: u16 = parts.next().expect("no fade color b0").parse().expect("invalid fade color b0");
+                let r0: u16 = parts.next()
+                    .with_context(|| format!("line {}: missing bg fade r0", i))?.parse()
+                    .with_context(|| format!("line {}: invalid bg fade r0", i))?;
+                let g0: u16 = parts.next()
+                    .with_context(|| format!("line {}: missing bg fade g0", i))?.parse()
+                    .with_context(|| format!("line {}: invalid bg fade g0", i))?;
+                let b0: u16 = parts.next()
+                    .with_context(|| format!("line {}: missing bg fade b0", i))?.parse()
+                    .with_context(|| format!("line {}: invalid bg fade b0", i))?;
 
-                let r1: u16 = parts.next().expect("no fade color r1").parse().expect("invalid fade color r1");
-                let g1: u16 = parts.next().expect("no fade color g1").parse().expect("invalid fade color g1");
-                let b1: u16 = parts.next().expect("no fade color b1").parse().expect("invalid fade color b1");
+                let r1: u16 = parts.next()
+                    .with_context(|| format!("line {}: missing bg fade r1", i))?.parse()
+                    .with_context(|| format!("line {}: invalid bg fade r1", i))?;
+                let g1: u16 = parts.next()
+                    .with_context(|| format!("line {}: missing bg fade g1", i))?.parse()
+                    .with_context(|| format!("line {}: invalid bg fade g1", i))?;
+                let b1: u16 = parts.next()
+                    .with_context(|| format!("line {}: missing bg fade b1", i))?.parse()
+                    .with_context(|| format!("line {}: invalid bg fade b1", i))?;
 
-                let n: u16 = parts.next().expect("no fade n").parse().expect("invalid fade n");
-                let ms_end = to_ms(parts.next().expect("no fade end time"), uses_beats, mspb);
+                let n: u16 = parts.next()
+                    .with_context(|| format!("line {}: missing fade n", i))?.parse()
+                    .with_context(|| format!("line {}: invalid fade n", i))?;
+
+                let ms_end = to_ms(parts.next().with_context(|| format!("line {}: missing fade end time", i))?, uses_beats, mspb, i)?;
 
                 let dms = ((ms_end - ms) as f32 / n as f32) as u32;
                 let mut ms_i = ms + dms;
@@ -172,7 +207,7 @@ pub fn compile(input: PathBuf, output: PathBuf) -> Result<()> {
                     ms_i += dms;
                 }
             },
-            other => panic!("/!\\ line {}: unsupported note type '{}'", i, other)
+            other => return Err(anyhow!("line {}: unsupported note type '{}'", i, other))
         };
 
         i += 1;
