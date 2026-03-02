@@ -8,8 +8,9 @@ fn adjust_ms(ms: u32) -> u32 {
     // making notes near the end of the song much
     // later than they should be
     
-    let calc_ms_per_real_ms: f64 = 0.995;  // hours upon gruelling hours
-    (ms as f64 * calc_ms_per_real_ms) as u32
+    // let calc_ms_per_real_ms: f64 = 0.995;  // hours upon gruelling hours
+    // (ms as f64 * calc_ms_per_real_ms) as u32
+    ms
 }
 
 fn get_field<'a>(lines: &'a Vec<&'a str>, i: usize) -> Result<&'a str> {
