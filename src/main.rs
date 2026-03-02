@@ -19,14 +19,20 @@ enum Command {
         input: PathBuf,
 
         #[arg(short, long, default_value = "./output.mtb")]
-        output: PathBuf
+        output: PathBuf,
+
+        #[arg(short, long, default_value = "0")]
+        start_offset: u32
     },
 
     Osu {
         input: PathBuf,
 
         #[arg(short, long, default_value = "./output.mtn")]
-        output: PathBuf
+        output: PathBuf,
+
+        #[arg(short, long, default_value = "0")]
+        start_offset: u32
     }
 }
 
@@ -35,13 +41,11 @@ fn main() -> Result<()> {
 
     use Command::*;
     match cli.command {
-        Compile { input, output } => {
-            compile::compile(input, output)
+        Compile { input, output, start_offset } => {
+            compile::compile(input, output, start_offset)
         },
-        Osu { input, output } => {
-            osu::osu(input, output)
+        Osu { input, output, start_offset } => {
+            osu::osu(input, output, start_offset)
         }
-    }?;
-
-    Ok(())
+    }
 }

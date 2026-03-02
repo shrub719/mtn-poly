@@ -20,7 +20,7 @@ fn convert_osu_x(osu_x: f32, lanes: f32) -> f32 {
     / (lanes - 1.0)
 }
 
-pub fn osu(input: PathBuf, output: PathBuf) -> Result<()> {
+pub fn osu(input: PathBuf, output: PathBuf, start_offset: u32) -> Result<()> {
     let osu = fs::read_to_string(input).unwrap();
     let mut txt = fs::File::create(output).unwrap();
 
@@ -52,9 +52,16 @@ pub fn osu(input: PathBuf, output: PathBuf) -> Result<()> {
 
         let _osu_y = parts.next().with_context(|| format!("line {}: missing y coordinate", i))?;
 
-        let ms: u32 = parts.next()
+        let mut ms: u32 = parts.next()
             .with_context(|| format!("line {}: missing note time", i))?.parse()
             .with_context(|| format!("line {}: invalid note time", i))?;
+
+        if ms < start_offset {
+            i += 1;
+            continue;
+        } else {
+            ms -= start_offset;
+        }
 
         let type_flags: u16 = parts.next()
             .with_context(|| format!("line {}: missing note type", i))?.parse()

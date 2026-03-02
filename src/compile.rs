@@ -92,7 +92,7 @@ fn interpolate_colour(n: u16, c0: (u16, u16, u16), c1: (u16, u16, u16)) -> Vec<(
     colours
 }
 
-pub fn compile(input: PathBuf, output: PathBuf) -> Result<()> {
+pub fn compile(input: PathBuf, output: PathBuf, start_offset: u32) -> Result<()> {
     let txt = fs::read_to_string(input).unwrap();
     let mut bin = fs::File::create(output).unwrap();
 
@@ -124,7 +124,13 @@ pub fn compile(input: PathBuf, output: PathBuf) -> Result<()> {
 
         let mut parts = line.split_whitespace();
         let class = parts.next().with_context(|| format!("line {}: missing class", i))?;
-        let ms = to_ms(parts.next().with_context(|| format!("line {}: missing time", i))?, uses_beats, mspb, i)?;
+        let mut ms = to_ms(parts.next().with_context(|| format!("line {}: missing time", i))?, uses_beats, mspb, i)?;
+
+        if ms < start_offset {
+            continue;
+        } else {
+            ms -= start_offset;
+        }
         
         match class {
             "t" => {
