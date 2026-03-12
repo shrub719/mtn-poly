@@ -1,6 +1,6 @@
 # polyrhythm
 
-A multipurpose command line conversion tool for metronome.
+A multipurpose command line conversion tool for [metronome](https://github.com/shrub719/metronome).
 
 ## Installation
 
